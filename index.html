@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Lo que nos quedó — un libro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,400;0,600;1,400;1,500&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+:root{--noche:#0f0a14;--vino:#7a1640;--vino2:#4a0d28;--oro:#e2bd7a;--rosa:#f472b6;--papel:#f6efe9;--tinta:#3b1a2a;
+--script:"Great Vibes",cursive;--serif:"Cormorant Infant",Georgia,serif;--w:min(42vw,52vh,400px);
+--grano:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .2 0 0 0 .08 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>")}
+
+/* ===== AJUSTE ESPECIAL PARA PANTALLAS DE CELULAR (MÓVIL) ===== */
+@media (max-width: 650px) {
+  :root { 
+    /* Reduce el ancho del libro para que quepan ambas páginas abiertas sin cortarse */
+    --w: min(38vw, 42vh, 260px); 
+  }
+  .book { font-size: calc(var(--w)*0.058) !important; }
+  h3 { font-size: 1.8em !important; margin-bottom: 0.2em !important; }
+  .txt { font-size: 0.88em !important; line-height: 1.35 !important; }
+  .txt::first-letter { font-size: 2.2em !important; padding: 0em 0.08em 0 0 !important; }
+  .pg { padding: 8% 7% 9% 9% !important; }
+  .num { font-size: 0.7em !important; bottom: 3% !important; }
+  .ui { bottom: 2vh !important; gap: 0.8rem !important; }
+  .ui button { width: 2.2rem !important; height: 2.2rem !important; font-size: 1.1rem !important; }
+  #cuenta { font-size: 0.85em !important; }
+  .ayuda { top: 2vh !important; font-size: 0.85em !important; }
+  .leyenda { font-size: 1.4em !important; bottom: 6% !important; }
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--noche);color:var(--tinta);font-family:var(--serif)}
+.stage{height:100%;position:relative;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;
+  background:
+    radial-gradient(45vw 30vh at 50% 18%,rgba(226,189,122,.08),transparent 70%),
+    radial-gradient(70vw 65vh at 50% 52%,#3a1230,var(--noche) 72%)}
+.stage.arrastrando{cursor:grabbing}
+.scene{height:100%;display:grid;place-items:center;perspective:2000px}
+.tilt{transform-style:preserve-3d;will-change:transform}
+
+.floor{position:absolute;left:50%;top:50%;width:calc(var(--w)*2.1);height:calc(var(--w)*.22);
+  transform:translate(-50%,calc(var(--w)*.74)) scaleX(var(--sx,.58));
+  background:radial-gradient(closest-side,rgba(0,0,0,.75),rgba(0,0,0,.25) 60%,transparent);filter:blur(12px);pointer-events:none}
+
+.book{position:relative;width:var(--w);height:calc(var(--w)*1.4);transform-style:preserve-3d;font-size:calc(var(--w)*.052);will-change:transform}
+.book>*{position:absolute}
+.leaf{inset:0;transform-origin:left center;transform-style:preserve-3d;will-change:transform}
+.leaf.cover,.leaf.contra{inset:-6px -8px -6px 0}
+.face{position:absolute;inset:0;-webkit-backface-visibility:hidden;backface-visibility:hidden;overflow:hidden;
+  background:var(--papel) var(--grano);box-shadow:inset 0 0 3.4em rgba(130,85,60,.16)}
+.back{transform:rotateY(180deg)}
+.pg{padding:11% 10% 12% 13%;height:100%;display:flex;flex-direction:column;justify-content:center}
+.face.front::before,.base::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(60,25,35,.32),rgba(60,25,35,.08) 6%,transparent 14%);pointer-events:none}
+.face.back::before,.stackl::before{content:"";position:absolute;inset:0;background:linear-gradient(270deg,rgba(60,25,35,.32),rgba(60,25,35,.08) 6%,transparent 14%);pointer-events:none}
+.shade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(90deg,transparent 30%,rgba(25,8,15,.9))}
+.back .shade{background:linear-gradient(270deg,transparent 30%,rgba(25,8,15,.9))}
+.num{position:absolute;bottom:5%;font-size:.8em;opacity:.55;font-style:italic}
+.front .num,.base .num{right:12%}.back .num{left:12%}
+
+.rig{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.seg{position:absolute;top:0;height:100%;transform-origin:left center;transform-style:preserve-3d}
+.sl{position:absolute;top:0;left:0;height:100%;width:calc(100% + 1px);overflow:hidden;
+  -webkit-backface-visibility:hidden;backface-visibility:hidden}
+.sl.b{transform:rotateY(180deg)}
+.rig .face{inset:auto;top:0;transform:none;-webkit-backface-visibility:visible;backface-visibility:visible}
+.sd{position:absolute;inset:0;background:#190810;opacity:0;pointer-events:none}
+
+.base{inset:0;background:var(--papel) var(--grano);transform:translateZ(-1px);
+  box-shadow:1px 1px 0 #e6d9d1,2px 2px 0 #f6efe9,3px 3px 0 #d9ccc4,4px 4px 0 #f6efe9,5px 5px 0 #cfc0b8,6px 6px 0 var(--vino),7px 7px 0 var(--vino2),16px 26px 44px rgba(0,0,0,.55)}
+.stackl{left:-100%;width:100%;top:0;bottom:0;background:var(--papel) var(--grano);transform:translateZ(-1px);opacity:0;
+  box-shadow:-1px 1px 0 #e6d9d1,-2px 2px 0 #f6efe9,-3px 3px 0 #d9ccc4,-4px 4px 0 #f6efe9,-5px 5px 0 #cfc0b8,-6px 6px 0 var(--vino),-7px 7px 0 var(--vino2),-16px 26px 44px rgba(0,0,0,.55)}
+.board{top:-6px;bottom:-6px;background:var(--vino2) var(--grano);transform:translateZ(-3px);border-radius:4px}
+.board.r{left:0;right:-8px}.board.l{left:calc(-100% - 8px);width:calc(100% + 8px);opacity:0}
+.cinta{left:60%;top:calc(100% - 2px);width:.6em;height:3.4em;transform:translateZ(-2px);
+  background:linear-gradient(90deg,#5b1030,#b02c68 50%,#5b1030);clip-path:polygon(0 0,100% 0,100% 100%,50% 86%,0 100%);
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,.45))}
+
+/* PORTADA */
+.cover .front{background:#3a0a1e var(--grano);border-radius:3px 9px 9px 3px;
+  box-shadow:1px 0 0 #3a0a1e,2px 1px 0 #26060f,3px 2px 0 #1a040a,inset 0 0 0 1px rgba(255,255,255,.08)}
+.cover .front::before{display:none}
+.cover .front::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.42),transparent 13%),linear-gradient(270deg,rgba(0,0,0,.18),transparent 5%)}
+.velo{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(15,4,10,.22) 0%,transparent 26%,transparent 50%,rgba(15,4,10,.85) 100%)}
+.filete{position:absolute;inset:4.2% 4.6% 4.2% 10%;border:1px solid rgba(226,189,122,.8);border-radius:2px 7px 7px 2px;pointer-events:none;
+  box-shadow:0 0 0 .3em rgba(226,189,122,.14)}
+.bisagra{position:absolute;top:0;bottom:0;left:6%;width:.9em;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.5),rgba(0,0,0,.08) 35%,rgba(255,255,255,.2) 62%,rgba(0,0,0,.3))}
+.titulo{position:absolute;left:10%;right:5%;bottom:9%;text-align:center;color:var(--oro);pointer-events:none}
+.titulo span{display:block;font-family:var(--script);font-size:2.9em;line-height:1;text-shadow:0 2px 10px rgba(0,0,0,.75),0 -1px 0 #0006}
+.titulo small{display:block;margin-top:.4em;font-style:italic;font-size:1.05em;opacity:.92;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.brillo{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(55% 40% at var(--mx,72%) var(--my,22%),rgba(255,255,255,.26),transparent 72%),
+             linear-gradient(115deg,transparent 38%,rgba(255,255,255,.09) 50%,transparent 62%)}
+.cover .back{background:#5b1030 var(--grano);display:grid;place-content:center;text-align:center;color:var(--oro);padding:12%;
+  box-shadow:inset 0 0 0 .7em #4a0d28,inset 0 0 0 calc(.7em + 1px) rgba(226,189,122,.5)}
+.cover .back b{font-family:var(--script);font-weight:400;font-size:3em}
+.cover .back p{font-style:italic;font-size:1.1em}
+
+/* CONTRAPORTADA */
+.contra .front{background:#3a0a1e var(--grano);border-radius:3px 9px 9px 3px;
+  box-shadow:1px 0 0 #3a0a1e,2px 1px 0 #26060f,3px 2px 0 #1a040a}
+.contra .front::before{display:none}
+.hoja{position:absolute;inset:6px 8px 6px 0;background:var(--papel) var(--grano);box-shadow:inset 0 0 3.4em rgba(130,85,60,.16)}
+.hoja::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(60,25,35,.32),rgba(60,25,35,.08) 6%,transparent 14%);pointer-events:none}
+.contra .back{background:var(--grano),linear-gradient(140deg,#8b1a4a,#3a0a1e);border-radius:9px 3px 3px 9px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--oro);
+  box-shadow:inset 0 0 0 .7em #4a0d28,inset 0 0 0 calc(.7em + 1px) rgba(226,189,122,.55)}
+.contra .back::before{display:none}
+.contra .bisagra{left:auto;right:6%;background:linear-gradient(270deg,rgba(0,0,0,.5),rgba(0,0,0,.08) 35%,rgba(255,255,255,.2) 62%,rgba(0,0,0,.3))}
+.contra .back b{font-family:var(--script);font-weight:400;font-size:3.2em;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+.contra .back p{font-style:italic;font-size:1.05em;opacity:.85;margin-top:.3em}
+.sello{width:4.6em;height:4.6em;border-radius:50%;border:1px solid var(--oro);display:grid;place-items:center;font-size:1.1em;margin-bottom:1em;
+  box-shadow:0 0 0 .3em rgba(226,189,122,.14),inset 0 0 1.2em rgba(0,0,0,.35)}
+.acciones{display:flex;flex-wrap:wrap;gap:.6em}
+.btn.principal{background:var(--vino);color:var(--papel)}
+.btn.principal:hover{background:var(--vino2)}
+
+h3{font-family:var(--script);font-weight:400;font-size:2.6em;line-height:1;color:var(--vino);margin-bottom:.4em}
+.txt{font-size:1.15em;line-height:1.55}
+.txt::first-letter{float:left;font-size:3.2em;line-height:.85;padding:.06em .1em 0 0;color:var(--vino);font-weight:600}
+.pie{margin-top:1em;font-style:italic;opacity:.75}
+
+/* CONTENEDOR DE VIDEO */
+.foto{position:absolute;inset:9% 10% 24% 12%;overflow:hidden;box-shadow:0 6px 18px rgba(60,25,35,.35);border:.45em solid #fff;background:#1a0a14}
+.foto video,.vframe{width:100%;height:100%;object-fit:cover;display:block}
+.foto video{pointer-events:none}
+.vframe{background:#1a0a14 center/cover no-repeat}
+.leyenda{position:absolute;left:0;right:0;bottom:9%;text-align:center;font-family:var(--script);font-size:2em;color:var(--vino)}
+
+.vplay{position:absolute;left:51%;top:42.5%;transform:translate(-50%,-50%);width:3.4em;height:3.4em;border-radius:50%;
+  border:1px solid var(--oro);background:rgba(15,4,10,.62);color:var(--oro);font:inherit;font-size:1em;line-height:1;cursor:pointer;
+  display:grid;place-items:center;transition:background .25s,color .25s;z-index:2}
+.vplay:hover{background:var(--oro);color:var(--vino2)}
+.vplay.on{left:auto;top:auto;right:calc(10% + .9em);bottom:calc(24% + .9em);transform:none;width:2.4em;height:2.4em;font-size:.85em;opacity:.9}
+
+.btn{margin-top:1.2em;align-self:flex-start;background:transparent;color:var(--vino);border:1px solid var(--vino);padding:.5em 1.3em;border-radius:99px;font:inherit;font-style:italic;cursor:pointer;transition:.25s}
+.btn:hover{background:var(--vino);color:var(--papel)}
+
+.ui{position:absolute;left:0;right:0;bottom:3.5vh;display:flex;justify-content:center;align-items:center;gap:1.2rem;color:var(--oro);font-style:italic;pointer-events:none}
+.ui button{pointer-events:auto;width:2.8rem;height:2.8rem;border-radius:50%;border:1px solid var(--oro);background:transparent;color:var(--oro);font-size:1.4rem;cursor:pointer;transition:.25s}
+.ui button:hover{background:var(--oro);color:var(--vino2)}
+button:focus-visible{outline:3px solid var(--rosa);outline-offset:3px}
+.ayuda{position:absolute;top:3.5vh;left:0;right:0;text-align:center;color:var(--oro);font-style:italic;opacity:.75;transition:opacity .6s}
+</style>
+</head>
+<body>
+<main class="stage" id="stage">
+  <p class="ayuda" id="ayuda">Arrastra las hojas o toca un lado del libro</p>
+  
+  <!-- CANCIÓN A THOUSAND YEARS INTEGRADA -->
+  <audio id="bgMusic" src="A_Thousand_Years.mp3" loop preload="auto"></audio>
+
+  <div class="scene"><div class="floor" id="floor"></div><div class="tilt" id="tilt">
+    <div class="book" id="book">
+      <div class="board r"></div><div class="board l"></div><div class="stackl"></div><div class="cinta"></div>
+      <div class="leaf cover" id="portada">
+        <div class="face front" id="frentePortada">
+          <div class="velo"></div>
+          <div class="filete"></div>
+          <div class="bisagra"></div>
+          <div class="titulo"><span>Lo que nos quedó</span><small>una historia de amor</small></div>
+          <div class="brillo"></div>
+        </div>
+        <div class="face back"><b>Para ti, Mabel</b><p>que estuviste en cada página.</p><div class="shade"></div></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="ui">
+    <button id="prev" aria-label="Página anterior">‹</button><span id="cuenta" aria-live="polite">Portada</span><button id="next" aria-label="Página siguiente">›</button>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+/* ====== ARCHIVOS DE VIDEO ====== */
+const VIDEOS = {
+  16: "WhatsApp Video 2026-09-28 at 2.19.17 AM.mp4",
+  17: "WhatsApp Video 2026-09-28 at 2.36.27 AM.mp4"
+};
+
+const CIERRE_AUTO = 0;
+
+const TEXTOS = [
+  ["Prólogo: El sueño y el directo", "Crear contenido y hacer lives casi a diario era mi sueño. Entre pantallas y streams me sentía orgulloso de ser tiktoker, pero en lo personal estaba atrapado en una rutina vacía. No sabía que en uno de esos directos mi vida cambiaría para siempre."],
+  ["Una donación en silencio", "Llegaste de la nada a mi live. Donaste sin comentar absolutamente nada. Me llamó tanto la atención tu silencio que te agradecí sin imaginar que esa donación misteriosa era el primer capítulo de nuestra historia."],
+  ["El reto del PVP", "Volviste al siguiente directo, esta vez escuchaste cómo hablaba y comentaste para retarme a un PVP. Acepté con gusto, te agregué al juego y me venció la curiosidad por saber quién eras detrás de esa pantalla."],
+  ["El primer mensaje: 'Mabel'", "Te busqué en el juego y mi corazón me motivó a escribirte un simple 'Mabel'. Aunque al principio no me reconociste, me explicaste que la cuenta era de un amigo y terminamos riendo. Ahí comenzó algo bonito."],
+  ["Noches en Discord", "Pasamos a hablar por Discord mientras jugábamos. Todo era sano, lleno de bromas y risas. Con la confianza, empezamos a dormirnos en llamada. Escuchar tu voz me hizo sentir, por primera vez en mucho tiempo, en casa."],
+  ["Volver a enamorarme", "Te confesé lo que sentía y descubrí que era mutuo. Tu presencia me dio la valentía de cerrar el pasado e iniciar una nueva etapa. Me enamoré profundamente de ti, Mabel; me diste la oportunidad de volver a amar de verdad."],
+  ["Como niños chiquitos", "Cuando por fin pudimos estar juntos, vivimos momentos únicos. Parecíamos niños chiquitos en nuestro amor, algo tan tierno y puro. Estaba completamente perdido de tanto amor por ti."],
+  ["De Tamaulipas a Guanajuato", "Cumplimos meses y la distancia entre nosotros empezó a doler. Aunque el mapa nos separaba, estabas presente en cada proyecto de mi trabajo, quedándote conmigo hasta tarde para apoyarme y nunca dejarme solo."],
+  ["El miedo y la mente", "Con el tiempo llegaron las dudas y el miedo me atrapó. Mi mente me traicionó y la desconfianza me hizo cometer errores. Evitaba hablar de nuestros problemas y te hice sentir mal con mis acciones, algo que jamás me perdonaré."],
+  ["Tu amor incondicional", "Mabel, siempre te fijaste en mi bienestar. Me elegiste por encima de cualquier cosa, me apoyaste, sanaste partes de mí y creíste en mis sueños cuando ni yo mismo lo hacía. Gracias por no soltarme."],
+  ["Mi Doctora Mabel Abigail", "Para mí no eres solo una enfermera; para mí ya eres mi DOCTORA MABEL ABIGAIL. Me enseñaste tanto y me sanaste el alma. Admiro con todo mi corazón la mujer increíble, valiente y guerrera que eres."],
+  ["Los sueños que guardo", "En mi mente y en mi corazón sigo llevando las promesas que nos hicimos. Danielito y Alaia viven en mis recuerdos más bonitos. Aunque los planes de casa, viajes e hijos se pausaron, yo sigo guardándolos con amor."],
+  ["Un 24 de septiembre de 2026", "Llegó el día definitivo. Decidí dar un paso al costado no porque dejara de amarte, sino porque el miedo me estaba matando y no quería seguir lastimando tu lindo corazón. Lo hice por tu bien, mi vida."],
+  ["Siempre fuiste tú", "Juro por Dios que mi amor por ti es verdadero y sigue intacto. Nadie tiene reemplazo en mi corazón: mi corazón te pertenece. Nunca pienses que no te elegí, porque siempre fuiste mi prioridad."],
+  ["Mi promesa se mantiene", "Sigo con la promesa de no volver a la vida de antes. No ha cambiado nada en mis proyectos y estoy trabajando en mi salud. Quiero que tú estés tranquila, comas bien y te cuides mucho, mi niña hermosa."],
+  ["Para el amor de mi vida", "Mabel, mi amorcito hermosa, perdóname por el daño que te causé. Eres el amor de mi vida. Te espera una etapa brillante y llena de éxito, porque puedes con todo y más."],
+  ["", ""],
+  ["", ""]
+];
+
+const LEYENDAS = [
+  "Donde todo empezó: en directo",
+  "Aquella primera donación misteriosa",
+  "El PVP que nos unió",
+  "Ese primer mensaje: 'Mabel'",
+  "Nuestras llamadas en Discord",
+  "El día que me volví a enamorar",
+  "Nuestro amor de niños chiquitos",
+  "Apoyándome en cada proyecto",
+  "Luchando contra la distancia",
+  "Tu abrazo que lo sanaba todo",
+  "Mi Doctora Mabel Abigail",
+  "Danielito y Alaia en el corazón",
+  "24 de septiembre de 2026",
+  "Tu lugar irremplazable",
+  "Cuidándote a la distancia",
+  "Un recuerdo para ti",
+  "Te amo, mi pelona"
+];
+
+const N=17, LAST=N+1, TOT=N+2, ESP=1.2;
+const isMobile = matchMedia("(max-width: 650px)").matches;
+const NS = isMobile ? 6 : 10;
+const CURL=38, BELLY=6, LAG=9, LIFT=.035;
+const LX=.35, LZ=.937;
+
+const $=s=>document.querySelector(s);
+const book=$("#book"), tilt=$("#tilt"), stage=$("#stage"), stackl=$(".stackl"), boardl=$(".board.l"), boardr=$(".board.r"), cinta=$(".cinta"), floor=$("#floor"), frente=$("#frentePortada");
+const bgMusic=$("#bgMusic");
+
+let musicStarted = false;
+function startMusic(){
+  if(!musicStarted){
+    bgMusic.play().then(()=>{
+      musicStarted = true;
+    }).catch(()=>{});
+  }
+}
+
+// Reproduce la música de forma automática al primer toque/click en la pantalla
+['pointerdown', 'touchstart', 'click'].forEach(evt => {
+  window.addEventListener(evt, startMusic, { once: true });
+});
+
+const L=[$("#portada")], S=[{p:0}], VID=[];
+
+for(let k=N;k>=1;k--){
+  const [t,b]=TEXTOS[k-1], vsrc=VIDEOS[k];
+  
+  let backContent = `<p class="leyenda">${LEYENDAS[k-1]}</p><span class="num">${2*k}</span><div class="shade"></div>`;
+  if(vsrc){
+    backContent = `<div class="foto"><video src="${vsrc}" playsinline preload="metadata" loop></video></div><button class="vplay" aria-label="Reproducir video">▶</button>` + backContent;
+  }
+
+  let frontContent = `<div class="pg"><h3>${t}</h3><p class="txt">${b}</p></div><span class="num">${2*k-1}</span><div class="shade"></div>`;
+  if(!t && !b && vsrc){
+    frontContent = `<div class="pg" style="align-items:center;text-align:center;"><h3 style="font-size:3em;">✦</h3><p class="txt" style="font-style:italic;">Un recuerdo especial en video...</p></div><span class="num">${2*k-1}</span><div class="shade"></div>`;
+  }
+
+  const d=document.createElement("div"); d.className="leaf";
+  d.innerHTML=`<div class="face front">${frontContent}</div><div class="face back">${backContent}</div>`;
+  book.appendChild(d); L[k]=d; S[k]={p:0};
+
+  const v=d.querySelector("video");
+  if(v){
+    const bt=d.querySelector(".vplay"); VID.push({k,v});
+    bt.addEventListener("click",()=>{
+      if(v.paused){
+        bgMusic.pause();
+        v.play().catch(()=>{});
+      }else{
+        v.pause();
+        if(musicStarted) bgMusic.play().catch(()=>{});
+      }
+    });
+    v.addEventListener("play",()=>{bt.classList.add("on");bt.textContent="❚❚";});
+    v.addEventListener("pause",()=>{bt.classList.remove("on");bt.textContent="▶";});
+  }
+}
+
+const baseEl=document.createElement("div"); baseEl.className="base"; book.appendChild(baseEl);
+const ult=document.createElement("div"); ult.className="leaf contra";
+ult.innerHTML=`<div class="face front"><div class="hoja"><div class="pg"><h3>Gracias por todo</h3><p class="txt">Nos faltó mucho por dar, pero con lo que vivimos me siento infinitamente agradecido. A cumplir nuevas metas, mi amor. Te amo con todas mis fuerzas. — Daniel</p><div class="acciones"><button class="btn principal" id="cerrar">Cerrar el libro</button><button class="btn" id="volver">Volver al inicio</button></div></div><span class="num">35</span></div><div class="shade"></div></div>
+<div class="face back"><div class="bisagra"></div><div class="sello">✦</div><b>Fin</b><p>Lo que nos quedó</p><div class="shade"></div></div>`;
+book.appendChild(ult); L[LAST]=ult; S[LAST]={p:0};
+
+const F=L.map(el=>({
+  f:el.querySelector(".face.front"), b:el.querySelector(".face.back"),
+  sh:[...el.querySelectorAll(".shade")], foto:el.querySelector(".foto"), video:el.querySelector("video")
+}));
+
+let c=0;
+let drag=null;
+const R=[];
+const DUR=matchMedia("(prefers-reduced-motion: reduce)").matches?0:1.2;
+
+const WT=(()=>{const w=Array.from({length:NS},(_,i)=>.25+i/(NS-1)),s=w.reduce((a,b)=>a+b,0);return w.map(x=>x/s);})();
+
+function snap(v){
+  try{
+    if(v.readyState<2)return "";
+    const vw=v.videoWidth||480, vh=v.videoHeight||270, s=Math.min(1,480/vw);
+    const cv=document.createElement("canvas"); cv.width=vw*s; cv.height=vh*s;
+    cv.getContext("2d").drawImage(v,0,0,cv.width,cv.height);
+    return cv.toDataURL("image/jpeg",.75);
+  }catch(e){return "";}
+}
+
+function buildRig(k){
+  const el=L[k], r=F[k], W=el.offsetWidth, H=el.offsetHeight, sw=W/NS;
+  let shot="";
+  if(r.video){r.video.pause();shot=snap(r.video);}
+  const rig=document.createElement("div"); rig.className="rig";
+  const slice=(face,idx,cls)=>{
+    const sl=document.createElement("div"); sl.className="sl "+cls;
+    if(cls==="b")sl.style.transformOrigin=(sw/2)+"px 50%";
+    const cl=face.cloneNode(true);
+    cl.removeAttribute("id");
+    cl.querySelectorAll("[id]").forEach(n=>n.removeAttribute("id"));
+    cl.querySelectorAll(".shade,.vplay").forEach(n=>n.remove());
+    cl.querySelectorAll("video").forEach(v=>{
+      const fr=document.createElement("div"); fr.className="vframe";
+      if(shot)fr.style.backgroundImage=`url("${shot}")`;
+      v.replaceWith(fr);
+    });
+    cl.style.left=(-idx*sw)+"px"; cl.style.width=W+"px"; cl.style.height=H+"px";
+    const sd=document.createElement("div"); sd.className="sd";
+    sl.append(cl,sd);
+    return {sl,sd,foto:cl.querySelector(".foto")};
+  };
+  const segs=[]; let host=rig;
+  for(let i=0;i<NS;i++){
+    const seg=document.createElement("div"); seg.className="seg"; seg.style.width=sw+"px";
+    if(i)seg.style.left="100%";
+    const f=slice(r.f,i,"f"), b=slice(r.b,NS-1-i,"b");
+    seg.append(f.sl,b.sl); host.appendChild(seg); host=seg; segs.push({seg,f,b});
+  }
+  el.appendChild(rig);
+  r.f.style.display="none"; r.b.style.display="none";
+  R[k]={rig,segs};
+}
+function destroyRig(k){
+  R[k].rig.remove(); R[k]=null;
+  F[k].f.style.display=""; F[k].b.style.display="";
+  S[k].v=0;
+}
+
+function pose(k){
+  const s=S[k], p=s.p, g=R[k];
+  let cu=(Math.sin(2*Math.PI*p)*CURL+Math.sin(Math.PI*p)*BELLY-LAG*s.v)*(k===0||k===LAST?.3:1);
+  cu=Math.max(-.95*180*p,Math.min(.95*180*(1-p),Math.max(-55,Math.min(55,cu))));
+  const t=Math.min(1,Math.max(0,(p-.5)*2)), e=1-(1-t)*(1-t), q=30*(1-e);
+  const clip=`inset(${q}% ${q}% ${q}% ${q}% round ${200*(1-e)}px)`, sc=`scale(${1.5-.5*e})`;
+  let a=-180*p;
+  for(let i=0;i<NS;i++){
+    const d=-cu*WT[i]; a+=d;
+    const sg=g.segs[i], rad=a*Math.PI/180, sn=Math.sin(rad), cs=Math.cos(rad);
+    sg.seg.style.transform=`rotateY(${d.toFixed(2)}deg)`;
+    const dF=LX*sn+LZ*cs, dB=-dF;
+    sg.f.sd.style.opacity=(Math.min(1,Math.max(0,1-dF/LZ))*.7).toFixed(3);
+    sg.b.sd.style.opacity=(Math.min(1,Math.max(0,1-dB/LZ))*.7).toFixed(3);
+    if(sg.b.foto){sg.b.foto.style.clipPath=clip;sg.b.foto.firstElementChild.style.transform=sc;}
+  }
+}
+
+function apply(k){
+  const s=S[k], p=s.p, el=L[k], r=F[k], z0=(TOT-k)*ESP, z1=(k+1)*ESP;
+  gsap.set(el,{rotationY:-180*p,z:z0+(z1-z0)*p});
+  const now=performance.now(), dt=Math.max(8,now-(s.t||now));
+  s.v=.7*(s.v||0)+.3*(((p-(s.lp??p))/dt)*1000); s.lp=p; s.t=now;
+  const moving=p>.0005&&p<.9995;
+  if(moving&&!R[k])buildRig(k);
+  else if(!moving&&R[k]&&!(drag&&drag.k===k))destroyRig(k);
+  if(R[k])pose(k);
+  else{
+    const d=p<.5;
+    r.f.style.visibility=d?"visible":"hidden";
+    r.b.style.visibility=d?"hidden":"visible";
+    r.sh.forEach(x=>x.style.opacity=Math.sin(p*Math.PI)*.6);
+    if(r.foto){
+      const t=Math.min(1,Math.max(0,(p-.5)*2)), e=1-(1-t)*(1-t), q=30*(1-e);
+      r.foto.style.clipPath=`inset(${q}% ${q}% ${q}% ${q}% round ${200*(1-e)}px)`;
+      r.foto.firstElementChild.style.transform=`scale(${1.5-.5*e})`;
+    }
+  }
+  if(k===0){stackl.style.opacity=p; boardl.style.opacity=p;}
+  if(k===0||k===LAST){
+    recentrar();
+    if(k===LAST){
+      const o=Math.max(0,1-p*10);
+      baseEl.style.opacity=o; boardr.style.opacity=o; cinta.style.opacity=o;
+      gsap.set(book,{y:-9*Math.sin(p*Math.PI)});
+    }
+  }
+}
+
+function recentrar(){
+  gsap.set(book,{xPercent:50*(S[0].p+S[LAST].p)});
+  floor.style.setProperty("--sx",(.58+.42*(S[0].p-S[LAST].p)).toFixed(3));
+}
+
+function thud(){
+  if(!DUR)return;
+  gsap.killTweensOf(book,"y");
+  gsap.timeline().to(book,{y:5,duration:.1,ease:"power2.in"}).to(book,{y:0,duration:.9,ease:"elastic.out(1,.35)"});
+  gsap.fromTo(floor,{opacity:.55},{opacity:1,duration:.7,ease:"power2.out"});
+}
+
+function settle(k,t,delay=0,ease="power2.inOut"){
+  gsap.killTweensOf(S[k]);
+  if(k===LAST)gsap.killTweensOf(book,"y");
+  gsap.to(S[k],{p:t,delay,duration:DUR*(.5+.5*Math.abs(t-S[k].p))*(k===LAST?1.5:1),ease,onUpdate:()=>apply(k),
+    onComplete:()=>{if(k===LAST&&t===1)thud();}});
+}
+
+let auto=null, cPrev=0;
+function upd(){
+  $("#cuenta").textContent=c===0?"Portada":c===TOT?"Contraportada":c===1?"Página 1 de 35":`Páginas ${2*c-2}–${2*c-1} de 35`;
+  const ay=$("#ayuda");
+  ay.textContent=c===TOT?"Toca el libro para abrirlo otra vez":"Arrastra las hojas o toca un lado del libro";
+  ay.style.opacity=(c===0||c===TOT)?.75:0;
+  VID.forEach(o=>{if(o.k!==c-1)o.v.pause();});
+  clearTimeout(auto);
+  const avanzo=c>cPrev; cPrev=c;
+  if(CIERRE_AUTO&&avanzo&&c===LAST)auto=setTimeout(()=>{if(c===LAST&&!drag)go(TOT);},CIERRE_AUTO);
+}
+
+function go(n){
+  n=Math.max(0,Math.min(TOT,n)); if(n===c)return;
+  if(c===0 && n>0) startMusic();
+  if(n>c)for(let k=c;k<n;k++)settle(k,1,(k-c)*.12); else for(let k=c-1;k>=n;k--)settle(k,0,(c-1-k)*.12);
+  c=n;upd();
+}
+L.forEach((_,k)=>apply(k));
+
+stage.addEventListener("pointerdown",e=>{
+  if(e.target.closest("button"))return;
+  startMusic();
+  const dir=c===0?1:c===TOT?-1:(e.clientX<innerWidth/2?-1:1);
+  if((dir===1&&c===TOT)||(dir===-1&&c===0))return;
+  const k=dir===1?c:c-1;
+  gsap.killTweensOf(S[k]);
+  drag={k,dir,x0:e.clientX,max:0};
+  stage.setPointerCapture(e.pointerId); stage.classList.add("arrastrando");
+  gsap.to(S[k],{p:dir===1?LIFT:1-LIFT,duration:.25,ease:"power2.out",onUpdate:()=>apply(k)});
+});
+
+stage.addEventListener("pointermove",e=>{
+  const nx=e.clientX/innerWidth, ny=e.clientY/innerHeight;
+  frente.style.setProperty("--mx",(30+nx*60).toFixed(1)+"%");
+  frente.style.setProperty("--my",(10+ny*45).toFixed(1)+"%");
+  if(!drag){gsap.to(tilt,{rotationY:(nx-.5)*10,rotationX:12-(ny-.5)*6,duration:.8,overwrite:"auto"});return;}
+  const dx=e.clientX-drag.x0, span=book.offsetWidth*1.4;
+  drag.max=Math.max(drag.max,Math.abs(dx));
+  gsap.killTweensOf(S[drag.k]);
+  S[drag.k].p=Math.min(1,Math.max(0,drag.dir===1?LIFT-dx/span:1-LIFT-dx/span));
+  apply(drag.k);
+});
+
+const soltar=()=>{
+  if(!drag)return; stage.classList.remove("arrastrando");
+  const {k,dir,max}=drag, p=S[k].p, v=S[k].v||0;
+  const t=max<6?(dir===1?1:0):(dir===1?(p>.3||v>1.2?1:0):(p<.7||v<-1.2?0:1));
+  drag=null; settle(k,t,0,max<6?"power2.inOut":"power2.out"); c=t===1?k+1:k; upd();
+};
+
+stage.addEventListener("pointerup",soltar);
+stage.addEventListener("pointercancel",soltar);
+
+$("#next").onclick=()=>go(c+1); $("#prev").onclick=()=>go(c-1);
+$("#volver").onclick=()=>go(0); $("#cerrar").onclick=()=>go(TOT);
+addEventListener("keydown",e=>{if(e.key==="ArrowRight"||e.key===" ")go(c+1);if(e.key==="ArrowLeft")go(c-1);});
+
+gsap.set(tilt,{rotationX:12});
+if(DUR){
+  gsap.from(tilt,{rotationX:40,y:80,duration:1.6,ease:"power3.out"});
+  gsap.from(".scene",{opacity:0,duration:1.2,ease:"power2.out"});
+}
+upd();
+</script>
+</body>
+</html>
